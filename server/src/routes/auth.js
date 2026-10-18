@@ -30,6 +30,13 @@ router.post('/register', async (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ message: 'Use a password with at least 6 characters.' });
   }
+
+  // Pre-validate server configuration before performing database mutations
+  if (!process.env.JWT_SECRET) {
+    console.error('Server configuration error: JWT_SECRET environment variable is missing.');
+    return res.status(500).json({ message: 'Something went wrong on the server. Try again.' });
+  }
+
   if (await User.findOne({ email: normalizedEmail })) {
     return res.status(409).json({ message: 'An account with this email already exists. Sign in instead.' });
   }
@@ -59,6 +66,11 @@ router.post('/login', async (req, res) => {
 
   if (!normalizedEmail || typeof password !== 'string' || !password) {
     return res.status(400).json({ message: 'Enter your email and password.' });
+  }
+
+  if (!process.env.JWT_SECRET) {
+    console.error('Server configuration error: JWT_SECRET environment variable is missing.');
+    return res.status(500).json({ message: 'Something went wrong on the server. Try again.' });
   }
 
   const user = await User.findOne({ email: normalizedEmail });

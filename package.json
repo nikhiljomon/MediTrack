@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "npm --prefix client ci --include=dev && npm --prefix client run build && npm --prefix server ci --omit=dev",
+    "build": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install --omit=dev",
     "start": "npm --prefix server start",
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",

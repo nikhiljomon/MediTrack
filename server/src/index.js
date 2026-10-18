@@ -55,18 +55,43 @@ if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error('Unhandled server error:', err);
+  // Sanitize any potential connection credentials or passwords before logging
+  const safeMessage = typeof err.message === 'string'
+    ? err.message.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/g, 'mongodb$1://$2:***@')
+    : 'Unknown error';
+
+  console.error('Unhandled server error:', {
+    name: err.name,
+    message: safeMessage,
+    code: err.code,
+    status: err.status,
+  });
+
   if (err.name === 'ValidationError') {
     return res.status(400).json({ message: err.message });
   }
   if (err.code === 11000) {
-    return res.status(409).json({ message: 'A record with that key already exists.' });
+    return res.status(409).json({ message: 'An account with this email already exists.' });
   }
   if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     return res.status(401).json({ message: 'Invalid or expired authentication session.' });
   }
+  if (
+    err.name === 'MongooseServerSelectionError' ||
+    err.name === 'MongoServerSelectionError' ||
+    err.name === 'MongoNetworkError' ||
+    err.name === 'MongoTimeoutError' ||
+    err.name === 'MongoNetworkTimeoutError' ||
+    (err.message && (err.message.includes('buffering timed out') || err.message.includes('ECONNREFUSED')))
+  ) {
+    return res.status(503).json({
+      message: 'Database is unavailable. Please ensure MongoDB is running.',
+    });
+  }
+
+  // Never expose raw stack traces, database credentials, or server internals to the browser
   res.status(err.status || 500).json({
-    message: err.message && process.env.NODE_ENV !== 'production'
+    message: err.status && err.status < 500
       ? err.message
       : 'Something went wrong on the server. Try again.',
   });

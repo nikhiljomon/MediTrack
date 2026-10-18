@@ -11,7 +11,10 @@ export default async function connectDB() {
     console.log('MongoDB reconnected');
   });
   mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err.message);
+    const safeMsg = typeof err.message === 'string'
+      ? err.message.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/g, 'mongodb$1://$2:***@')
+      : 'Unknown MongoDB error';
+    console.error('MongoDB connection error:', safeMsg);
   });
 
   await mongoose.connect(uri, {
