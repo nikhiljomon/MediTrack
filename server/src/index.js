@@ -1,10 +1,14 @@
-import 'dotenv/config';
-import 'express-async-errors'; // must come before routes so async errors reach the error handler
-import express from 'express';
-import cors from 'cors';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+import 'express-async-errors'; // must come before routes so async errors reach the error handler
+import express from 'express';
+import cors from 'cors';
 import mongoose from 'mongoose';
 
 import connectDB from './config/db.js';
@@ -14,10 +18,10 @@ import medicineRoutes from './routes/medicines.js';
 import doseRoutes from './routes/doses.js';
 import startReminderJob from './jobs/reminders.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+const corsOptions = process.env.CLIENT_URL ? { origin: process.env.CLIENT_URL } : {};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Database readiness middleware
@@ -43,7 +47,7 @@ app.use('/api/medicines', checkDbReady, auth, medicineRoutes);
 app.use('/api/doses', checkDbReady, auth, doseRoutes);
 
 // In production, serve the built React app from the same server
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
   const dist = path.join(__dirname, '../../client/dist');
   app.use(express.static(dist));
   app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
@@ -69,10 +73,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 connectDB()
   .then(() => {
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+    app.listen(PORT, HOST, () => console.log(`Server running on http://${HOST}:${PORT}`));
     startReminderJob();
   })
   .catch((err) => {

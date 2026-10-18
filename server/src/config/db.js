@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export default async function connectDB() {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URL;
   if (!uri) throw new Error('MONGODB_URI is not set in environment variables');
 
   mongoose.connection.on('disconnected', () => {
