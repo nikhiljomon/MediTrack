@@ -1,0 +1,12 @@
+{
+  "name": "meditrack",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm --prefix client ci --include=dev && npm --prefix client run build && npm --prefix server ci --omit=dev",
+    "start": "npm --prefix server start"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
